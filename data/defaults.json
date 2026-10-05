@@ -1,0 +1,50 @@
+{
+  "app": {
+    "name": "Arrayo",
+    "version": "1.0.0",
+    "description": "Interactive array operations visualizer for students"
+  },
+  "address": {
+    "baseAddress": 1000,
+    "elementSize": 4,
+    "lowerBound": 0,
+    "index": 3,
+    "length": 7
+  },
+  "operations": {
+    "array": [
+      10,
+      20,
+      30,
+      40,
+      50
+    ],
+    "position": 2,
+    "insertValue": 25
+  },
+  "linearSearch": {
+    "array": [
+      12,
+      7,
+      25,
+      18,
+      31,
+      9
+    ],
+    "key": 18
+  },
+  "binarySearch": {
+    "array": [
+      42,
+      7,
+      19,
+      31,
+      55,
+      12,
+      70,
+      25
+    ],
+    "key": 31,
+    "mode": "sort"
+  }
+}

@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Arrayo — Interactive Array Visualizer</title>
+<link rel="stylesheet" href="css/style.css">>
+</head>
+<body>
+<div class="app">
+<aside class="sidebar" id="sidebar">
+  <div class="side-brand"><div class="logo">A</div><div><strong>Arrayo</strong><span>DSA VISUALIZER</span></div></div>
+  <div class="side-label">Modules</div>
+  <nav class="side-nav" aria-label="Array modules">
+    <button class="tab active" data-tab="address"><span class="nav-icon">01</span><span class="nav-text">Address Calculation</span></button>
+    <button class="tab" data-tab="insert"><span class="nav-icon">02</span><span class="nav-text">Insertion &amp; Deletion</span></button>
+    <button class="tab" data-tab="linear"><span class="nav-icon">03</span><span class="nav-text">Linear Search</span></button>
+    <button class="tab" data-tab="binary"><span class="nav-icon">04</span><span class="nav-text">Binary Search</span></button>
+  </nav>
+  <div class="side-footer"><b>Arrayo</b><br>Learn array operations through visual, step-by-step execution.</div>
+</aside>
+<main class="main">
+<header class="topbar">
+  <div class="page-title"><h1>Array Operations</h1><div class="subtitle">Interactive data-structure learning environment</div></div>
+  <div class="top-actions"><button class="mobile-menu" id="menuBtn" onclick="toggleSidebar()">☰</button><span class="pill">1D Arrays · 01–15 Elements</span></div>
+</header>
+
+<section id="address" class="module active"><div class="module-title"><div><div class="module-kicker">Module 01</div><h2>Address Calculation</h2><p>Understand how an array element maps to a memory address.</p></div></div>
+<div class="layout">
+  <div class="card">
+    <h2>Address Calculation</h2><div class="help">Calculate the memory address of any element using the 1D array formula.</div>
+    <div class="form-grid">
+      <div class="field"><label>Base address</label><input id="aBase" type="number" value="1000"></div>
+      <div class="field"><label>Element size (bytes)</label><input id="aW" type="number" value="4" min="1"></div>
+      <div class="field"><label>Lower bound (LB)</label><input id="aLB" type="number" value="0"></div>
+      <div class="field"><label>Index (i)</label><input id="aIndex" type="number" value="3"></div>
+      <div class="field full"><label>Array length</label><input id="aLen" type="number" value="7" min="1" max="15"></div>
+    </div>
+    <div class="actions">
+      <button class="btn primary" onclick="addressStart()">Calculate</button>
+      <button class="btn" onclick="addressReset()">Reset</button>
+    </div>
+    <div id="aStatus" class="status"></div>
+  </div>
+  <div class="card visual">
+    <div class="visual-head"><div><h2>Memory layout</h2><div class="help">Each box shows its logical index and calculated memory address.</div></div><div class="metric-row"><div class="metric">Target <b id="aTarget">—</b></div><div class="metric">Address <b id="aResult">—</b></div></div></div>
+    <div id="aArray" class="array-wrap"></div>
+    <div class="formula" id="aFormula">Address = Base + (i − LB) × w<br><span class="hl">Enter values and calculate to see the substitution.</span></div>
+    <div class="log"><div class="log-head"><h3>Calculation log</h3></div><div id="aLog" class="log-list"><div class="empty">No calculation yet.</div></div></div>
+  </div>
+</div>
+</section>
+
+<section id="insert" class="module"><div class="module-title"><div><div class="module-kicker">Module 02</div><h2>Insertion &amp; Deletion</h2><p>Visualize element movement when the array changes.</p></div></div>
+<div class="layout">
+  <div class="card">
+    <h2>Insertion &amp; Deletion</h2><div class="help">Use zero-based positions. Insert shifts elements right; delete shifts elements left.</div>
+    <div class="field"><label>Array elements (comma separated)</label><input id="opArray" value="10,20,30,40,50"></div>
+    <div class="form-grid" style="margin-top:11px">
+      <div class="field"><label>Operation</label><select id="opType"><option value="insert">Insertion</option><option value="delete">Deletion</option></select></div>
+      <div class="field"><label>Position</label><input id="opPos" type="number" value="2" min="0"></div>
+      <div class="field full" id="valueField"><label>Value to insert</label><input id="opValue" value="25"></div>
+    </div>
+    <div class="actions">
+      <button class="btn primary" onclick="opStart()">Start</button><button class="btn dark" onclick="opStep()">Step</button><button class="btn" onclick="opReset()">Reset</button>
+    </div>
+    <div class="speed"><div class="speed-row"><span>Animation speed</span><span id="opSpeedText">Medium</span></div><input id="opSpeed" type="range" min="1" max="5" value="3"></div>
+    <div id="opStatus" class="status"></div>
+  </div>
+  <div class="card visual">
+    <div class="visual-head"><div><h2>Operation trace</h2><div class="help">Watch each shift happen one step at a time.</div></div><div class="metric-row"><div class="metric">Shifts <b id="opShifts">0</b></div><div class="metric">Step <b id="opStepNo">0</b></div></div></div>
+    <div id="opArrayView" class="array-wrap"></div>
+    <div id="opExplain" class="operation-box">Configure the operation and press <b>Start</b>.</div>
+    <div class="log"><div class="log-head"><h3>Step-by-step log</h3></div><div id="opLog" class="log-list"><div class="empty">No operation started.</div></div></div>
+  </div>
+</div>
+</section>
+
+<section id="linear" class="module"><div class="module-title"><div><div class="module-kicker">Module 03</div><h2>Linear Search</h2><p>Follow a sequential scan from the first element to the result.</p></div></div>
+<div class="layout">
+  <div class="card">
+    <h2>Linear Search</h2><div class="help">Scan from left to right until the key is found or every element has been checked.</div>
+    <div class="field"><label>Array elements (comma separated)</label><input id="linArray" value="12,7,25,18,31,9"></div>
+    <div class="field" style="margin-top:11px"><label>Search key</label><input id="linKey" type="number" value="18"></div>
+    <div class="actions"><button class="btn primary" onclick="linStart()">Start</button><button class="btn dark" onclick="linStep()">Step</button><button class="btn" onclick="linReset()">Reset</button></div>
+    <div class="speed"><div class="speed-row"><span>Animation speed</span><span id="linSpeedText">Medium</span></div><input id="linSpeed" type="range" min="1" max="5" value="3"></div>
+    <div id="linStatus" class="status"></div>
+  </div>
+  <div class="card visual">
+    <div class="visual-head"><div><h2>Search trace</h2><div class="help">The current comparison is highlighted.</div></div><div class="metric-row"><div class="metric">Comparisons <b id="linComp">0</b></div><div class="metric">Result <b id="linResult">—</b></div></div></div>
+    <div id="linArrayView" class="array-wrap"></div>
+    <div id="linExplain" class="operation-box">Press <b>Start</b> to prepare the scan.</div>
+    <div class="log"><div class="log-head"><h3>Step-by-step log</h3></div><div id="linLog" class="log-list"><div class="empty">No search started.</div></div></div>
+  </div>
+</div>
+</section>
+
+<section id="binary" class="module"><div class="module-title"><div><div class="module-kicker">Module 04</div><h2>Binary Search</h2><p>Watch the sorted search range shrink around the target.</p></div></div>
+<div class="layout">
+  <div class="card">
+    <h2>Binary Search</h2><div class="help">Binary search requires sorted data. This visualizer can sort your input automatically before tracing.</div>
+    <div class="field"><label>Array elements (comma separated)</label><input id="binArray" value="42,7,19,31,55,12,70,25"></div>
+    <div class="field" style="margin-top:11px"><label>Search key</label><input id="binKey" type="number" value="31"></div>
+    <div class="field" style="margin-top:11px"><label>Sorted-array behavior</label><select id="binMode"><option value="sort">Auto-sort before search</option><option value="warn">Warn and stop if unsorted</option></select></div>
+    <div class="actions"><button class="btn primary" onclick="binStart()">Start</button><button class="btn dark" onclick="binStep()">Step</button><button class="btn" onclick="binReset()">Reset</button></div>
+    <div class="speed"><div class="speed-row"><span>Animation speed</span><span id="binSpeedText">Medium</span></div><input id="binSpeed" type="range" min="1" max="5" value="3"></div>
+    <div id="binStatus" class="status"></div>
+  </div>
+  <div class="card visual">
+    <div class="visual-head"><div><h2>Range narrowing</h2><div class="help">Low, mid, and high show the active search range.</div></div><div class="metric-row"><div class="metric">Comparisons <b id="binComp">0</b></div><div class="metric">Result <b id="binResult">—</b></div></div></div>
+    <div id="binArrayView" class="array-wrap"></div>
+    <div id="binExplain" class="operation-box">Press <b>Start</b> to prepare binary search.</div>
+    <div class="log"><div class="log-head"><h3>Step-by-step log</h3></div><div id="binLog" class="log-list"><div class="empty">No search started.</div></div></div>
+  </div>
+</div>
+</section>
+</main>
+</div>
+
+<script src="js/app.js"></script>
+</body>
+</html>
