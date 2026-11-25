@@ -168,6 +168,26 @@ function sortSetInfo(){
  const info=sortDetails[$('sortAlgorithm').value];
  $('sortInfoTitle').textContent=info.title;$('sortInfoText').textContent=info.text;$('sortComplexity').innerHTML=info.complexity;
 }
+function sortMascotSay(message,pose='is-ready'){
+ const mascot=$('sortMascot');
+ mascot.classList.remove('is-ready','is-thinking','is-moving','is-cheering');
+ mascot.classList.add(pose);$('sortMascotText').textContent=message;
+}
+function sortMascotForFrame(message){
+ if(message.includes('Sorting complete'))sortMascotSay('All sorted! You did it. Try another algorithm?','is-cheering');
+ else if(/digit pass/i.test(message))sortMascotSay('Sorting by digit—watch the values find their buckets.','is-thinking');
+ else if(/compare/i.test(message))sortMascotSay('Let’s compare the highlighted values. What do you think happens next?','is-thinking');
+ else if(/swap|shift|place|insert|move|merge|copy/i.test(message))sortMascotSay('Nice move! Watch how the values find their place.','is-moving');
+ else sortMascotSay('One step at a time—follow the highlighted bars.','is-ready');
+}
+function sortMascotHint(){
+ let message;
+ if(sortState.phase==='idle')message='Choose a sorting method and press Prepare to get started.';
+ else if(sortState.phase==='done')message='Great work! Pick another algorithm and compare how it sorts.';
+ else if(sortState.phase==='playing')message='Follow the highlighted bars to see which values are being compared or moved.';
+ else message='Use Step to inspect one operation, or Play to watch the full animation.';
+ sortMascotSay(message,'is-thinking');
+}
 function sortRender(arr,meta={}){
  const bars=$('sortBars'),maxAbs=Math.max(1,...arr.map(v=>Math.abs(v)));
  bars.innerHTML=arr.map((value,index)=>{
@@ -297,6 +317,7 @@ function sortPrepare(){
  sortState={frames,cursor:0,phase:'ready',token:sortState.token+1};
  clearLog('sortLog','');sortRender(frames[0].arr,frames[0]);
  $('sortExplain').textContent=frames[0].message;
+ sortMascotSay('Ready! Tap Step or Play and I’ll follow along.','is-ready');
  $('sortPlay').textContent='Play';
  status('sortStatus',`${sortDetails[algorithm].title} prepared with ${frames.length-1} steps. Press Step or Play to begin.`,'info');
 }
@@ -304,6 +325,7 @@ function sortStep(){
  if(sortState.phase==='idle'||sortState.cursor>=sortState.frames.length-1)return;
  sortState.cursor++;const frame=sortState.frames[sortState.cursor];
  sortRender(frame.arr,frame);$('sortExplain').textContent=frame.message;logTo('sortLog',frame.message);
+ sortMascotForFrame(frame.message);
  if(sortState.cursor===sortState.frames.length-1){
   sortState.phase='done';$('sortPlay').textContent='Play';
   status('sortStatus',`Sorted ${frame.arr.length} values in ${sortState.cursor} steps (${frame.comparisons} comparisons, ${frame.writes} writes).`,'good');
@@ -315,7 +337,7 @@ async function sortPlay(){
  }
  if(sortState.phase==='idle'){sortPrepare();if(sortState.phase==='idle')return}
  if(sortState.cursor>=sortState.frames.length-1)return;
- sortState.phase='playing';const token=++sortState.token;$('sortPlay').textContent='Pause';status('sortStatus','Animation playing. Use Pause, Step, or Reset to control playback.','info');
+ sortState.phase='playing';const token=++sortState.token;$('sortPlay').textContent='Pause';status('sortStatus','Animation playing. Use Pause, Step, or Reset to control playback.','info');sortMascotSay('Watch the bars—I’ll keep an eye on each step.','is-moving');
  while(sortState.phase==='playing'&&sortState.token===token&&sortState.cursor<sortState.frames.length-1){
   await sleep(speedMs($('sortSpeed').value));
   if(sortState.phase==='playing'&&sortState.token===token)sortStep();
@@ -325,7 +347,7 @@ async function sortPlay(){
 function sortReset(){
  sortState={frames:[],cursor:0,phase:'idle',token:sortState.token+1};
  $('sortPlay').textContent='Play';$('sortExplain').innerHTML='Choose an algorithm and press <b>Prepare</b> to create its step-by-step trace.';
- clearLog('sortLog','No sort prepared.');sortRender(parseArr($('sortArray').value));status('sortStatus','');
+ clearLog('sortLog','No sort prepared.');sortRender(parseArr($('sortArray').value));status('sortStatus','');sortMascotSay('Ready when you are! Choose a sort and press Prepare.','is-ready');
 }
 function sortRandomize(){
  const values=Array.from({length:8},()=>Math.floor(Math.random()*91)-20);
@@ -336,6 +358,7 @@ $('sortStep').addEventListener('click',sortStep);
 $('sortPlay').addEventListener('click',sortPlay);
 $('sortReset').addEventListener('click',sortReset);
 $('sortRandom').addEventListener('click',sortRandomize);
+$('sortMascot').addEventListener('click',sortMascotHint);
 $('sortAlgorithm').addEventListener('change',()=>{sortSetInfo();sortReset()});
 $('sortSpeed').addEventListener('input',()=>setSpeedText('sortSpeed','sortSpeedText'));
 sortSetInfo();setSpeedText('sortSpeed','sortSpeedText');sortReset();

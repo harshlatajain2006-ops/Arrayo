@@ -133,6 +133,11 @@
   </div>
   <div class="card visual">
     <div class="visual-head"><div><h2>Sorting simulation</h2><div class="help">Highlighted bars are being compared or moved; completed positions are marked green.</div></div><div class="metric-row"><div class="metric">Comparisons <b id="sortComparisons">0</b></div><div class="metric">Writes <b id="sortWrites">0</b></div><div class="metric">Step <b id="sortStepNo">0 / 0</b></div></div></div>
+    <button class="sort-mascot is-ready" id="sortMascot" type="button" aria-label="Ask Sorty for a hint">
+      <span class="mascot-avatar" aria-hidden="true"><span class="mascot-antenna"></span><span class="mascot-shell"><span class="mascot-screen"><i class="mascot-eye"></i><i class="mascot-eye"></i><i class="mascot-smile"></i></span></span><span class="mascot-foot mascot-foot-left"></span><span class="mascot-foot mascot-foot-right"></span></span>
+      <span class="mascot-copy"><strong>Sorty</strong><span id="sortMascotText">Ready when you are! Choose a sort and press Prepare.</span><small>Tap Sorty for a hint</small></span>
+      <span class="mascot-tap-icon" aria-hidden="true">?</span>
+    </button>
     <div id="sortBars" class="sort-bars" aria-label="Array visualization"></div>
     <div class="sort-legend"><span><i class="legend-compare"></i>Compare</span><span><i class="legend-move"></i>Move / pivot</span><span><i class="legend-sorted"></i>Sorted</span></div>
     <div id="sortExplain" class="operation-box" aria-live="polite">Choose an algorithm and press <b>Prepare</b> to create its step-by-step trace.</div>
