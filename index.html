@@ -4,11 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Arrayo — Interactive Array Visualizer</title>
-<link rel="stylesheet" href="css/style.css">>
+<link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 <div class="app">
-<aside class="sidebar" id="sidebar">
+<aside class="sidebar" id="sidebar" aria-label="Site navigation">
   <div class="side-brand"><div class="logo">A</div><div><strong>Arrayo</strong><span>DSA VISUALIZER</span></div></div>
   <div class="side-label">Modules</div>
   <nav class="side-nav" aria-label="Array modules">
@@ -16,13 +16,15 @@
     <button class="tab" data-tab="insert"><span class="nav-icon">02</span><span class="nav-text">Insertion &amp; Deletion</span></button>
     <button class="tab" data-tab="linear"><span class="nav-icon">03</span><span class="nav-text">Linear Search</span></button>
     <button class="tab" data-tab="binary"><span class="nav-icon">04</span><span class="nav-text">Binary Search</span></button>
+    <button class="tab" data-tab="sorting"><span class="nav-icon">05</span><span class="nav-text">Sorting Algorithms</span></button>
   </nav>
   <div class="side-footer"><b>Arrayo</b><br>Learn array operations through visual, step-by-step execution.</div>
 </aside>
+<button class="sidebar-overlay" id="sidebarOverlay" type="button" aria-label="Close navigation" aria-hidden="true" tabindex="-1"></button>
 <main class="main">
 <header class="topbar">
   <div class="page-title"><h1>Array Operations</h1><div class="subtitle">Interactive data-structure learning environment</div></div>
-  <div class="top-actions"><button class="mobile-menu" id="menuBtn" onclick="toggleSidebar()">☰</button><span class="pill">1D Arrays · 01–15 Elements</span></div>
+  <div class="top-actions"><button class="menu-toggle" id="menuBtn" type="button" aria-controls="sidebar" aria-expanded="true" aria-label="Collapse navigation" title="Collapse navigation"><span aria-hidden="true">☰</span></button><span class="pill">1D Arrays · 01–15 Elements</span></div>
 </header>
 
 <section id="address" class="module active"><div class="module-title"><div><div class="module-kicker">Module 01</div><h2>Address Calculation</h2><p>Understand how an array element maps to a memory address.</p></div></div>
@@ -111,6 +113,30 @@
     <div id="binArrayView" class="array-wrap"></div>
     <div id="binExplain" class="operation-box">Press <b>Start</b> to prepare binary search.</div>
     <div class="log"><div class="log-head"><h3>Step-by-step log</h3></div><div id="binLog" class="log-list"><div class="empty">No search started.</div></div></div>
+  </div>
+</div>
+</section>
+<section id="sorting" class="module"><div class="module-title"><div><div class="module-kicker">Module 05</div><h2>Sorting Algorithms</h2><p>Explore how seven algorithms compare and rearrange values into order.</p></div></div>
+<div class="layout">
+  <div class="card">
+    <h2>Build a sort</h2><div class="help">Choose an algorithm, edit the values, then step through each comparison and movement.</div>
+    <div class="field"><label for="sortArray">Array elements (comma separated, up to 15)</label><input id="sortArray" value="29,10,14,37,13,5"></div>
+    <div class="field" style="margin-top:11px"><label for="sortAlgorithm">Algorithm</label><select id="sortAlgorithm">
+      <option value="selection">Selection sort</option><option value="bubble">Bubble sort</option><option value="insertion">Insertion sort</option><option value="quick">Quick sort</option><option value="merge">Merge sort</option><option value="shell">Shell sort</option><option value="radix">Radix sort</option>
+    </select></div>
+    <div class="actions">
+      <button class="btn primary" id="sortStart">Prepare</button><button class="btn dark" id="sortPlay">Play</button><button class="btn" id="sortStep">Step</button><button class="btn" id="sortReset">Reset</button><button class="btn" id="sortRandom">Randomize</button>
+    </div>
+    <div class="speed"><div class="speed-row"><label for="sortSpeed">Animation speed</label><span id="sortSpeedText">Medium</span></div><input id="sortSpeed" type="range" min="1" max="5" value="3"></div>
+    <div id="sortStatus" class="status" aria-live="polite"></div>
+    <div class="sort-info"><strong id="sortInfoTitle">Selection sort</strong><span id="sortInfoText">Find the smallest remaining value and place it at the front.</span><span class="sort-complexity" id="sortComplexity">Time: O(n<sup>2</sup>) &middot; Space: O(1)</span></div>
+  </div>
+  <div class="card visual">
+    <div class="visual-head"><div><h2>Sorting simulation</h2><div class="help">Highlighted bars are being compared or moved; completed positions are marked green.</div></div><div class="metric-row"><div class="metric">Comparisons <b id="sortComparisons">0</b></div><div class="metric">Writes <b id="sortWrites">0</b></div><div class="metric">Step <b id="sortStepNo">0 / 0</b></div></div></div>
+    <div id="sortBars" class="sort-bars" aria-label="Array visualization"></div>
+    <div class="sort-legend"><span><i class="legend-compare"></i>Compare</span><span><i class="legend-move"></i>Move / pivot</span><span><i class="legend-sorted"></i>Sorted</span></div>
+    <div id="sortExplain" class="operation-box" aria-live="polite">Choose an algorithm and press <b>Prepare</b> to create its step-by-step trace.</div>
+    <div class="log"><div class="log-head"><h3>Step-by-step log</h3></div><div id="sortLog" class="log-list"><div class="empty">No sort prepared.</div></div></div>
   </div>
 </div>
 </section>

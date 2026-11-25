@@ -7,6 +7,7 @@ A self-contained educational prototype for visualizing common 1D array operation
 2. Insertion & Deletion
 3. Linear Search
 4. Binary Search
+5. Sorting Algorithms (selection, bubble, insertion, quick, merge, shell, and radix sort)
 
 ## Project structure
 
@@ -23,7 +24,6 @@ Arrayo/
 ```
 
 ## Database / persistence
-
 This prototype does **not require a server-side database**. All array operations and animations run in the browser.
 
 `data/defaults.json` is included as the project's local seed/configuration data. It contains the sample values used by the visualizer. This makes the project easy to extend later to a real backend/database without pretending that a database is required for the current prototype.

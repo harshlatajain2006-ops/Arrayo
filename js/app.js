@@ -20,13 +20,50 @@ function cells(id,arr,meta={}) {
 function setSpeedText(inputId,textId){const v=$(inputId).value;$(textId).textContent=['Slow','Low','Medium','Fast','Very fast'][v-1]}
 ['op','lin','bin'].forEach(p=>{ $(p+'Speed').addEventListener('input',()=>setSpeedText(p+'Speed',p+'SpeedText')); });
 
-function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open')}
-
-document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{
- document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.module').forEach(x=>x.classList.remove('active'));
- b.classList.add('active');$(b.dataset.tab).classList.add('active');
- if(window.innerWidth<=650)document.getElementById('sidebar').classList.remove('open');
+const sidebar=$('sidebar'),app=document.querySelector('.app'),menuButton=$('menuBtn');
+const viewportMode=()=>window.innerWidth<=650?'mobile':window.innerWidth<=1000?'compact':'desktop';
+let currentViewportMode=viewportMode();
+function syncSidebarButton(){
+ const expanded=currentViewportMode==='mobile'?sidebar.classList.contains('open'):currentViewportMode==='compact'?app.classList.contains('nav-expanded'):!app.classList.contains('nav-collapsed');
+ menuButton.setAttribute('aria-expanded',String(expanded));
+ menuButton.setAttribute('aria-label',expanded?'Collapse navigation':'Expand navigation');
+ menuButton.title=expanded?'Collapse navigation':'Expand navigation';
+ $('sidebarOverlay').setAttribute('aria-hidden',String(currentViewportMode!=='mobile'||!expanded));
+}
+function closeMobileSidebar(returnFocus=false){
+ sidebar.classList.remove('open');syncSidebarButton();
+ if(returnFocus)menuButton.focus();
+}
+function toggleSidebar(){
+ if(currentViewportMode==='mobile')sidebar.classList.toggle('open');
+ else if(currentViewportMode==='compact')app.classList.toggle('nav-expanded');
+ else app.classList.toggle('nav-collapsed');
+ syncSidebarButton();
+}
+menuButton.addEventListener('click',toggleSidebar);
+$('sidebarOverlay').addEventListener('click',()=>closeMobileSidebar(true));
+document.addEventListener('keydown',event=>{
+ if(event.key==='Escape'&&currentViewportMode==='mobile'&&sidebar.classList.contains('open'))closeMobileSidebar(true);
 });
+window.addEventListener('resize',()=>{
+ const nextMode=viewportMode();
+ if(nextMode!==currentViewportMode){
+  currentViewportMode=nextMode;sidebar.classList.remove('open');app.classList.remove('nav-collapsed','nav-expanded');
+ }
+ syncSidebarButton();
+});
+document.querySelectorAll('.tab').forEach(b=>{
+ const label=b.querySelector('.nav-text').textContent.trim();
+ b.setAttribute('aria-label',label);b.title=label;
+ if(b.classList.contains('active'))b.setAttribute('aria-current','page');
+ b.addEventListener('click',()=>{
+  document.querySelectorAll('.tab').forEach(x=>{x.classList.remove('active');x.removeAttribute('aria-current')});
+  document.querySelectorAll('.module').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');b.setAttribute('aria-current','page');$(b.dataset.tab).classList.add('active');
+  if(currentViewportMode==='mobile')closeMobileSidebar();
+ });
+});
+syncSidebarButton();
 
 function addressRender(){
  const base=Number($('aBase').value),w=Number($('aW').value),lb=Number($('aLB').value),idx=Number($('aIndex').value),len=Number($('aLen').value);
@@ -116,3 +153,189 @@ function binReset(){bin={arr:parseArr($('binArray').value).slice().sort((a,b)=>a
 binReset();
 
 $('opType').addEventListener('change',()=>{$('valueField').style.display=$('opType').value==='insert'?'block':'none'});
+
+const sortDetails={
+ selection:{title:'Selection sort',text:'Find the smallest remaining value and place it at the front.',complexity:'Time: O(n<sup>2</sup>) &middot; Space: O(1)'},
+ bubble:{title:'Bubble sort',text:'Compare neighbors and swap them until the largest values bubble to the end.',complexity:'Time: O(n<sup>2</sup>) &middot; Space: O(1)'},
+ insertion:{title:'Insertion sort',text:'Take the next value and shift larger values right to insert it in order.',complexity:'Time: O(n<sup>2</sup>) &middot; Space: O(1)'},
+ quick:{title:'Quick sort',text:'Partition around a pivot, then recursively sort the values on either side.',complexity:'Average: O(n log n), worst: O(n<sup>2</sup>) &middot; Space: O(log n)'},
+ merge:{title:'Merge sort',text:'Split the array into halves, then merge the sorted halves back together.',complexity:'Time: O(n log n) &middot; Space: O(n)'},
+ shell:{title:'Shell sort',text:'Use progressively smaller gaps to move out-of-place values toward their positions.',complexity:'Worst: O(n<sup>2</sup>) &middot; Space: O(1)'},
+ radix:{title:'Radix sort',text:'Distribute integers by digit, one place at a time; negative values are handled too.',complexity:'Time: O(d(n + b)) &middot; Space: O(n + b)'}
+};
+let sortState={frames:[],cursor:0,phase:'idle',token:0};
+function sortSetInfo(){
+ const info=sortDetails[$('sortAlgorithm').value];
+ $('sortInfoTitle').textContent=info.title;$('sortInfoText').textContent=info.text;$('sortComplexity').innerHTML=info.complexity;
+}
+function sortRender(arr,meta={}){
+ const bars=$('sortBars'),maxAbs=Math.max(1,...arr.map(v=>Math.abs(v)));
+ bars.innerHTML=arr.map((value,index)=>{
+  const classes=['sort-column'];
+  if(meta.sorted&&meta.sorted.includes(index))classes.push('is-sorted');
+  if(meta.compare&&meta.compare.includes(index))classes.push('is-compare');
+  if(meta.move&&meta.move.includes(index))classes.push('is-move');
+  const height=22+Math.round(Math.abs(value)/maxAbs*88);
+  return `<div class="${classes.join(' ')}" aria-label="Index ${index}, value ${value}"><span class="sort-value">${value}</span><div class="sort-bar" style="height:${height}px"></div><span class="sort-index">${index}</span></div>`;
+ }).join('');
+ $('sortComparisons').textContent=meta.comparisons||0;
+ $('sortWrites').textContent=meta.writes||0;
+ $('sortStepNo').textContent=`${sortState.cursor} / ${Math.max(0,sortState.frames.length-1)}`;
+}
+function sortMakeFrames(input,algorithm){
+ const arr=input.slice(),frames=[];
+ let comparisons=0,writes=0,swaps=0;
+ const record=(message,compare=[],move=[],sorted=[])=>frames.push({arr:arr.slice(),message,compare,move,sorted,comparisons,writes,swaps});
+ const swap=(i,j)=>{
+  if(i===j)return false;
+  [arr[i],arr[j]]=[arr[j],arr[i]];swaps++;writes+=2;return true;
+ };
+ record(`Starting ${sortDetails[algorithm].title.toLowerCase()} with [${arr.join(', ')}].`);
+ if(algorithm==='selection'){
+  for(let i=0;i<arr.length-1;i++){
+   let min=i;
+   for(let j=i+1;j<arr.length;j++){
+    comparisons++;record(`Compare ${arr[j]} at index ${j} with the current minimum ${arr[min]} at index ${min}.`,[j,min],[min],Array.from({length:i},(_,k)=>k));
+    if(arr[j]<arr[min])min=j;
+   }
+   if(swap(i,min))record(`Swap ${arr[i]} with ${arr[min]} to place the next smallest value at index ${i}.`,[],[i,min],Array.from({length:i+1},(_,k)=>k));
+   else record(`${arr[i]} is already the smallest remaining value.`,[],[i],Array.from({length:i+1},(_,k)=>k));
+  }
+ }else if(algorithm==='bubble'){
+  for(let end=arr.length-1;end>0;end--){
+   let changed=false;
+   for(let j=0;j<end;j++){
+    comparisons++;record(`Compare neighboring values ${arr[j]} and ${arr[j+1]}.`,[j,j+1]);
+    if(arr[j]>arr[j+1]){swap(j,j+1);changed=true;record(`Swap them: ${arr[j]} and ${arr[j+1]} are now in ascending order.`,[],[j,j+1])}
+   }
+   if(!changed){record('No swaps in this pass; the array is already sorted.',[],[],Array.from({length:arr.length},(_,k)=>k));break}
+   record(`Pass complete: index ${end} is now in its final position.`,[],[],Array.from({length:arr.length-end},(_,k)=>end+k));
+  }
+ }else if(algorithm==='insertion'){
+  for(let i=1;i<arr.length;i++){
+   const key=arr[i];let j=i-1;
+   while(j>=0){
+    comparisons++;record(`Compare ${arr[j]} at index ${j} with the held value ${key}.`,[j],[i]);
+    if(arr[j]<=key)break;
+    arr[j+1]=arr[j];writes++;record(`Shift ${arr[j]} one place right.`,[],[j,j+1]);j--;
+   }
+   arr[j+1]=key;writes++;record(`Insert ${key} at index ${j+1}.`,[],[j+1]);
+  }
+ }else if(algorithm==='quick'){
+  const partition=(low,high)=>{
+   const pivot=arr[high];let boundary=low;
+   for(let j=low;j<high;j++){
+    comparisons++;record(`Compare ${arr[j]} with pivot ${pivot} at index ${high}.`,[j],[high]);
+    if(arr[j]<=pivot){
+     if(boundary!==j){swap(boundary,j);record(`Move ${arr[boundary]} into the left partition.`,[],[boundary,j])}
+     boundary++;
+    }
+   }
+   if(swap(boundary,high))record(`Place pivot ${arr[boundary]} at its final index ${boundary}.`,[],[boundary]);
+   else record(`Pivot ${pivot} is already at its final index ${boundary}.`,[],[boundary]);
+   return boundary;
+  };
+  const quick=(low,high)=>{
+   if(low>=high)return;
+   const pivot=partition(low,high);quick(low,pivot-1);quick(pivot+1,high);
+  };
+  quick(0,arr.length-1);
+ }else if(algorithm==='merge'){
+  const mergeSort=(left,right)=>{
+   if(left>=right)return;
+   const mid=Math.floor((left+right)/2);mergeSort(left,mid);mergeSort(mid+1,right);
+   const first=arr.slice(left,mid+1),second=arr.slice(mid+1,right+1);let i=0,j=0,k=left;
+   while(i<first.length&&j<second.length){
+    comparisons++;
+    if(first[i]<=second[j])arr[k]=first[i++];
+    else arr[k]=second[j++];
+    writes++;record(`Merge into index ${k}; place ${arr[k]} from the two sorted halves.`,[],[k]);k++;
+   }
+   while(i<first.length){arr[k]=first[i++];writes++;record(`Copy ${arr[k]} from the left half into index ${k}.`,[],[k]);k++}
+   while(j<second.length){arr[k]=second[j++];writes++;record(`Copy ${arr[k]} from the right half into index ${k}.`,[],[k]);k++}
+   record(`Merged indices ${left} through ${right}.`);
+  };
+  mergeSort(0,arr.length-1);
+ }else if(algorithm==='shell'){
+  for(let gap=Math.floor(arr.length/2);gap>0;gap=Math.floor(gap/2)){
+   for(let i=gap;i<arr.length;i++){
+    const key=arr[i];let j=i;
+    while(j>=gap){
+     comparisons++;record(`Compare ${arr[j-gap]} at index ${j-gap} with ${key}, using gap ${gap}.`,[j-gap],[i]);
+     if(arr[j-gap]<=key)break;
+     arr[j]=arr[j-gap];writes++;record(`Shift ${arr[j]} from index ${j-gap} to ${j}.`,[],[j-gap,j]);j-=gap;
+    }
+    arr[j]=key;writes++;record(`Place ${key} at index ${j} for gap ${gap}.`,[],[j]);
+   }
+  }
+ }else if(algorithm==='radix'){
+  if(!arr.every(Number.isSafeInteger))return null;
+  const negative=arr.filter(v=>v<0),positive=arr.filter(v=>v>=0);
+  const maxAbs=Math.max(0,...arr.map(Math.abs));let place=1;
+  do{
+   const distribute=(values,descending)=>{
+    const buckets=Array.from({length:10},()=>[]);
+    values.forEach(value=>buckets[Math.floor(Math.abs(value)/place)%10].push(value));
+    const order=descending?[9,8,7,6,5,4,3,2,1,0]:[0,1,2,3,4,5,6,7,8,9];
+    return order.flatMap(digit=>buckets[digit]);
+   };
+   const sortedNegative=distribute(negative,true),sortedPositive=distribute(positive,false);
+   arr.splice(0,arr.length,...sortedNegative,...sortedPositive);writes+=arr.length;
+   record(`Stable digit pass at place ${place}: negatives use descending digit order, then non-negative values use ascending order.`,[],Array.from({length:arr.length},(_,k)=>k));
+   place*=10;
+  }while(Math.floor(maxAbs/place)>0);
+ }
+ record('Sorting complete. The array is in ascending order.',[],[],Array.from({length:arr.length},(_,k)=>k));
+ return frames;
+}
+function sortPrepare(){
+ const arr=parseArr($('sortArray').value),algorithm=$('sortAlgorithm').value;
+ if(!validArr(arr)){status('sortStatus','Enter 1–15 finite numeric values separated by commas.','bad');return}
+ if(algorithm==='radix'&&!arr.every(Number.isSafeInteger)){status('sortStatus','Radix sort requires whole numbers within the safe integer range.','bad');return}
+ const frames=sortMakeFrames(arr,algorithm);
+ if(!frames){status('sortStatus','Could not prepare this sort for the supplied values.','bad');return}
+ sortState={frames,cursor:0,phase:'ready',token:sortState.token+1};
+ clearLog('sortLog','');sortRender(frames[0].arr,frames[0]);
+ $('sortExplain').textContent=frames[0].message;
+ $('sortPlay').textContent='Play';
+ status('sortStatus',`${sortDetails[algorithm].title} prepared with ${frames.length-1} steps. Press Step or Play to begin.`,'info');
+}
+function sortStep(){
+ if(sortState.phase==='idle'||sortState.cursor>=sortState.frames.length-1)return;
+ sortState.cursor++;const frame=sortState.frames[sortState.cursor];
+ sortRender(frame.arr,frame);$('sortExplain').textContent=frame.message;logTo('sortLog',frame.message);
+ if(sortState.cursor===sortState.frames.length-1){
+  sortState.phase='done';$('sortPlay').textContent='Play';
+  status('sortStatus',`Sorted ${frame.arr.length} values in ${sortState.cursor} steps (${frame.comparisons} comparisons, ${frame.writes} writes).`,'good');
+ }
+}
+async function sortPlay(){
+ if(sortState.phase==='playing'){
+  sortState.phase='paused';sortState.token++;$('sortPlay').textContent='Play';status('sortStatus','Animation paused. Use Step or Play to continue.','info');return;
+ }
+ if(sortState.phase==='idle'){sortPrepare();if(sortState.phase==='idle')return}
+ if(sortState.cursor>=sortState.frames.length-1)return;
+ sortState.phase='playing';const token=++sortState.token;$('sortPlay').textContent='Pause';status('sortStatus','Animation playing. Use Pause, Step, or Reset to control playback.','info');
+ while(sortState.phase==='playing'&&sortState.token===token&&sortState.cursor<sortState.frames.length-1){
+  await sleep(speedMs($('sortSpeed').value));
+  if(sortState.phase==='playing'&&sortState.token===token)sortStep();
+ }
+ if(sortState.phase==='playing'&&sortState.token===token){sortState.phase='ready';$('sortPlay').textContent='Play'}
+}
+function sortReset(){
+ sortState={frames:[],cursor:0,phase:'idle',token:sortState.token+1};
+ $('sortPlay').textContent='Play';$('sortExplain').innerHTML='Choose an algorithm and press <b>Prepare</b> to create its step-by-step trace.';
+ clearLog('sortLog','No sort prepared.');sortRender(parseArr($('sortArray').value));status('sortStatus','');
+}
+function sortRandomize(){
+ const values=Array.from({length:8},()=>Math.floor(Math.random()*91)-20);
+ $('sortArray').value=values.join(',');sortReset();
+}
+$('sortStart').addEventListener('click',sortPrepare);
+$('sortStep').addEventListener('click',sortStep);
+$('sortPlay').addEventListener('click',sortPlay);
+$('sortReset').addEventListener('click',sortReset);
+$('sortRandom').addEventListener('click',sortRandomize);
+$('sortAlgorithm').addEventListener('change',()=>{sortSetInfo();sortReset()});
+$('sortSpeed').addEventListener('input',()=>setSpeedText('sortSpeed','sortSpeedText'));
+sortSetInfo();setSpeedText('sortSpeed','sortSpeedText');sortReset();
